@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cannabis Youth Exposure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700&family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/scrollama"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #ffffff;
+      font-family: 'Rubik', sans-serif;
+      color: #1a1a1a;
+    }
+
+    #scrolly {
+      position: relative;
+      width: 100%;
+    }
+
+    #scrolly figure {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: #ffffff;
+      z-index: 0;
+      padding-top: 24px;
+    }
+
+    .header-block {
+      width: 799px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+
+    .header-block h1 {
+      font-family: 'Archivo', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      color: #1a1a1a;
+    }
+
+    .header-block .subtitle {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #555;
+    }
+
+    .viz-frame {
+      width: 799px;
+      height: 380px;
+      position: relative;
+      margin-top: 8px;
+    }
+
+    .viz-frame svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    #scrolly article {
+      position: relative;
+      padding: 0;
+      z-index: 1;
+      pointer-events: none;
+      margin-top: -45vh;
+    }
+
+    .scroll-step {
+      height: 70vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      pointer-events: none;
+      padding-top: 0;
+    }
+
+    .scroll-step .text-box {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      padding: 20px 28px;
+      max-width: 340px;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      pointer-events: auto;
+    }
+
+    .scroll-step.is-active .text-box {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .spacer-step {
+      height: 50vh;
+    }
+
+    .node { cursor: pointer; }
+
+    .tooltip {
+      position: fixed;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #1a1a1a;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 200;
+      font-family: 'Rubik', sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .tooltip.visible { opacity: 1; }
+
+    .footnote {
+      width: 799px;
+      text-align: left;
+      font-family: 'Rubik', sans-serif;
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <section id="scrolly">
+    <figure>
+      <div class="header-block">
+        <h1>Most children poisoned by cannabis in New York are under 5</h1>
+        <p class="subtitle">355 pediatric cannabis exposure cases reported to the Upstate New York Poison Center in 2025, by substance and age group.</p>
+      </div>
+      <div class="viz-frame">
+        <svg id="chart"></svg>
+      </div>
+      <div class="footnote">Data source: Upstate New York Poison Center &nbsp;|&nbsp; By: Grace Jiang/Times Union</div>
+    </figure>
+
+    <article>
+      <div class="scroll-step" data-step="1">
+        <div class="text-box">Each dot represents one child reported to New York's poison center for cannabis exposure in 2025. Even this number is an undercount, because hospitals are not required to report cases.</div>
+      </div>
+      <div class="scroll-step spacer-step" data-step="2"></div>
+      <div class="scroll-step" data-step="3">
+        <div class="text-box">Edibles account for more than half of all cases, often because they look like ordinary candy. Unregulated products, which don't follow state packaging rules, are especially dangerous for kids.</div>
+      </div>
+      <div class="scroll-step spacer-step" data-step="4"></div>
+      <div class="scroll-step" data-step="5">
+        <div class="text-box">Children 5 and under are the most exposed group across every substance category. Among teens, most cases are intentional — which often from not realizing edibles take up to 90 minutes to kick in.</div>
+      </div>
+      <div class="scroll-step spacer-step" data-step="6"></div>
+    </article>
+  </section>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const data = [{"id":0,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":1,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":2,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":3,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":4,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":5,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":6,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":7,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":8,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":9,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":10,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":11,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":12,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":13,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":14,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":15,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":16,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":17,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":18,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":19,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":20,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":21,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":22,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":23,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":24,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":25,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":26,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":27,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":28,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":29,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":30,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":31,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":32,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":33,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":34,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":35,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":36,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":37,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":38,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":39,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":40,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":41,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":42,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":43,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":44,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":45,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":46,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":47,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":48,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":49,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":50,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":51,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":52,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":53,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":54,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":55,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":56,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":57,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":58,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":59,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":60,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":61,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":62,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":63,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":64,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":65,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":66,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":67,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":68,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":69,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":70,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":71,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":72,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":73,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":74,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":75,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":76,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":77,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":78,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":79,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":80,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":81,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":82,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":83,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":84,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":85,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":86,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":87,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":88,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":89,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":90,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":91,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":92,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":93,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":94,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":95,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":96,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":97,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":98,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":99,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":100,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":101,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":102,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":103,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":104,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":105,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":106,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":107,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":108,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":109,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":110,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":111,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":112,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":113,"substance":"Marijuana: Edible Preparation","ageGroup":"<= 5 Years","isYouth":true},{"id":114,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":115,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":116,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":117,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":118,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":119,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":120,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":121,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":122,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":123,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":124,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":125,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":126,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":127,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":128,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":129,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":130,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":131,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":132,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":133,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":134,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":135,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":136,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":137,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":138,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":139,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":140,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":141,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":142,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":143,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":144,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":145,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":146,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":147,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":148,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":149,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":150,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":151,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":152,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":153,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":154,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":155,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":156,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":157,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":158,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":159,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":160,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":161,"substance":"Marijuana: Edible Preparation","ageGroup":"6 - 12 Years","isYouth":true},{"id":162,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":163,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":164,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":165,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":166,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":167,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":168,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":169,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":170,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":171,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":172,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":173,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":174,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":175,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":176,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":177,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":178,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":179,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":180,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":181,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":182,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":183,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":184,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":185,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":186,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":187,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":188,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":189,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":190,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":191,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":192,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":193,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":194,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":195,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":196,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":197,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":198,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":199,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":200,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":201,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":202,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":203,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":204,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":205,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":206,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":207,"substance":"Marijuana: Edible Preparation","ageGroup":"13 - 19 Years","isYouth":true},{"id":208,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":209,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":210,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":211,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":212,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":213,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":214,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":215,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":216,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":217,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":218,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":219,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":220,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":221,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":222,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":223,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":224,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":225,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":226,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":227,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":228,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":229,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":230,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":231,"substance":"Marijuana: Dried Plant","ageGroup":"<= 5 Years","isYouth":true},{"id":232,"substance":"Marijuana: Dried Plant","ageGroup":"6 - 12 Years","isYouth":true},{"id":233,"substance":"Marijuana: Dried Plant","ageGroup":"6 - 12 Years","isYouth":true},{"id":234,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":235,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":236,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":237,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":238,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":239,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":240,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":241,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":242,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":243,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":244,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":245,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":246,"substance":"Marijuana: Dried Plant","ageGroup":"13 - 19 Years","isYouth":true},{"id":247,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":248,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":249,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":250,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":251,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":252,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":253,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":254,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":255,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":256,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":257,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":258,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":259,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":260,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":261,"substance":"eCigarettes","ageGroup":"<= 5 Years","isYouth":true},{"id":262,"substance":"eCigarettes","ageGroup":"6 - 12 Years","isYouth":true},{"id":263,"substance":"eCigarettes","ageGroup":"6 - 12 Years","isYouth":true},{"id":264,"substance":"eCigarettes","ageGroup":"6 - 12 Years","isYouth":true},{"id":265,"substance":"eCigarettes","ageGroup":"6 - 12 Years","isYouth":true},{"id":266,"substance":"eCigarettes","ageGroup":"6 - 12 Years","isYouth":true},{"id":267,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":268,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":269,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":270,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":271,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":272,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":273,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":274,"substance":"eCigarettes","ageGroup":"13 - 19 Years","isYouth":true},{"id":275,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":276,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":277,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":278,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":279,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":280,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":281,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":282,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":283,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":284,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":285,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":286,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":287,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":288,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":289,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":290,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":291,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":292,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":293,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":294,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":295,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":296,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":297,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":298,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":299,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":300,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":301,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":302,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":303,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":304,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":305,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":306,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":307,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":308,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":309,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":310,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":311,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":312,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":313,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":314,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":315,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":316,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":317,"substance":"Other Marijuana Substances","ageGroup":"<= 5 Years","isYouth":true},{"id":318,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":319,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":320,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":321,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":322,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":323,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":324,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":325,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":326,"substance":"Other Marijuana Substances","ageGroup":"6 - 12 Years","isYouth":true},{"id":327,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":328,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":329,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":330,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":331,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":332,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":333,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":334,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":335,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":336,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":337,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":338,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":339,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":340,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":341,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":342,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":343,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":344,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":345,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":346,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":347,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":348,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":349,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":350,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":351,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":352,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":353,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true},{"id":354,"substance":"Other Marijuana Substances","ageGroup":"13 - 19 Years","isYouth":true}];
+
+    const W = 799, H = 380;
+    const colors = {
+      'Marijuana: Edible Preparation': '#C1292E',
+      'Marijuana: Dried Plant': '#1A7A6D',
+      'eCigarettes': '#B8860B',
+      'Other Marijuana Substances': '#2E5F85'
+    };
+    const substanceOrder = ['Marijuana: Edible Preparation','Marijuana: Dried Plant','eCigarettes','Other Marijuana Substances'];
+    const RADIUS = 6;
+    let currentStage = -1;
+
+    const svg = d3.select('#chart');
+    const tooltip = d3.select('#tooltip');
+    const nodes = data.map(d => ({...d, x: W/2, y: H/2}));
+
+    const simulation = d3.forceSimulation(nodes)
+      .force('charge', d3.forceManyBody().strength(0.5))
+      .force('collision', d3.forceCollide().radius(RADIUS + 1))
+      .on('tick', () => circles.attr('cx', d => d.x).attr('cy', d => d.y));
+
+    const circles = svg.selectAll('circle').data(nodes).join('circle')
+      .attr('class', 'node')
+      .attr('r', RADIUS)
+      .attr('fill', d => colors[d.substance])
+      .attr('stroke', 'rgba(0,0,0,0.15)')
+      .attr('stroke-width', 0.5)
+      .on('mouseover', (e, d) => {
+        tooltip.html(`<div style="color:${colors[d.substance]};font-weight:600">${d.substance.replace('Marijuana: ','')}</div><div style="margin-top:4px">Age: ${d.ageGroup}</div>`)
+          .style('left', (e.clientX+15)+'px').style('top', (e.clientY-10)+'px').classed('visible', true);
+      })
+      .on('mouseout', () => tooltip.classed('visible', false));
+
+    function setStage(stage) {
+      if (stage === currentStage) return;
+      currentStage = stage;
+
+      if (stage === 0) {
+        simulation
+          .force('x', d3.forceX().x(d => {
+            const angle = {'Marijuana: Edible Preparation': Math.PI*1.3, 'Marijuana: Dried Plant': Math.PI*0.7, 'eCigarettes': Math.PI*1.8, 'Other Marijuana Substances': Math.PI*1.0};
+            const a = angle[d.substance] || 0, r = Math.min(W,H)*0.05;
+            return W/2 - Math.min(W,H)*0.05 + Math.cos(a)*r;
+          }).strength(0.25))
+          .force('y', d3.forceY().y(d => {
+            const angle = {'Marijuana: Edible Preparation': Math.PI*1.3, 'Marijuana: Dried Plant': Math.PI*0.7, 'eCigarettes': Math.PI*1.8, 'Other Marijuana Substances': Math.PI*1.0};
+            const a = angle[d.substance] || 0, r = Math.min(W,H)*0.05;
+            return H/2 - Math.min(W,H)*0.05 + Math.sin(a)*r;
+          }).strength(0.25))
+          .force('charge', d3.forceManyBody().strength(0.8))
+          .force('collision', d3.forceCollide().radius(RADIUS + 0.3))
+          .force('center', d3.forceCenter(W/2, H/2));
+      } else if (stage === 1) {
+        simulation
+          .force('x', d3.forceX().x(d => {
+            return {'Marijuana: Edible Preparation': W/2-80, 'Marijuana: Dried Plant': W/2+80, 'eCigarettes': W/2-80, 'Other Marijuana Substances': W/2+80}[d.substance] || W/2;
+          }).strength(0.2))
+          .force('y', d3.forceY().y(d => {
+            return {'Marijuana: Edible Preparation': H/2-80, 'Marijuana: Dried Plant': H/2-80, 'eCigarettes': H/2+80, 'Other Marijuana Substances': H/2+80}[d.substance] || H/2;
+          }).strength(0.2))
+          .force('charge', d3.forceManyBody().strength(0.5))
+          .force('collision', d3.forceCollide().radius(RADIUS + 0.5))
+          .force('center', null);
+      } else if (stage === 2) {
+        const getPos = (substance, ageGroup) => {
+          const ageX = {'<= 5 Years': W*0.25, '6 - 12 Years': W*0.5, '13 - 19 Years': W*0.75}[ageGroup] || W/2;
+          const yOff = (substanceOrder.indexOf(substance) - 1.5) * 35;
+          return { x: ageX, y: H/2 + yOff };
+        };
+        simulation
+          .force('x', d3.forceX().x(d => getPos(d.substance, d.ageGroup).x).strength(0.15))
+          .force('y', d3.forceY().y(d => getPos(d.substance, d.ageGroup).y).strength(0.15))
+          .force('charge', d3.forceManyBody().strength(0.2))
+          .force('collision', d3.forceCollide().radius(RADIUS + 0.5))
+          .force('center', null);
+      }
+      simulation.alpha(1).restart();
+    }
+
+    // Step-to-stage mapping: steps 1,2 → stage 0 | steps 3,4 → stage 1 | steps 5,6 → stage 2
+    function stepToStage(stepIndex) {
+      if (stepIndex <= 1) return 0;
+      if (stepIndex <= 3) return 1;
+      return 2;
+    }
+
+    const scroller = scrollama();
+    const steps = d3.selectAll('.scroll-step');
+
+    function handleStepEnter(response) {
+      steps.classed('is-active', function(d, i) {
+        return i === response.index;
+      });
+      setStage(stepToStage(response.index));
+    }
+
+    function handleStepExit(response) {
+      if (response.direction === 'up') {
+        d3.select(response.element).classed('is-active', false);
+      }
+    }
+
+    scroller
+      .setup({
+        step: '.scroll-step',
+        offset: 0.5,
+        debug: false
+      })
+      .onStepEnter(handleStepEnter)
+      .onStepExit(handleStepExit);
+
+    setStage(0);
+  </script>
+</body>
+</html>
