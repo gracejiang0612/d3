@@ -252,6 +252,27 @@
       })
       .on('mouseout', () => tooltip.classed('visible', false));
 
+    const highlightRect = svg.append('rect')
+      .attr('class', 'highlight-rect')
+      .attr('rx', 6)
+      .attr('ry', 6)
+      .attr('fill', 'none')
+      .attr('stroke', '#C1292E')
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '6,4')
+      .attr('opacity', 0);
+
+    function updateHighlightRect() {
+      const cx = W * 0.25;
+      const rectW = W * 0.22;
+      const rectH = H * 0.65;
+      highlightRect
+        .attr('x', cx - rectW / 2)
+        .attr('y', H / 2 - rectH / 2)
+        .attr('width', rectW)
+        .attr('height', rectH);
+    }
+
     function setStage(stage) {
       if (stage === currentStage) return;
       currentStage = stage;
@@ -296,6 +317,10 @@
           .force('center', null);
       }
       simulation.alpha(1).restart();
+
+      updateHighlightRect();
+      highlightRect.transition().duration(600)
+        .attr('opacity', stage === 2 ? 1 : 0);
     }
 
     // Step-to-stage mapping: steps 1,2 → stage 0 | steps 3,4 → stage 1 | steps 5,6 → stage 2
@@ -337,6 +362,7 @@
       circles.attr('r', RADIUS);
       simulation
         .force('collision', d3.forceCollide().radius(RADIUS + 1));
+      updateHighlightRect();
       const prev = currentStage;
       currentStage = -1;
       setStage(prev);
