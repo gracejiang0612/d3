@@ -41,10 +41,9 @@
 
     .header-block {
       width: 100%;
-      max-width: 799px;
-      text-align: left;
+      text-align: center;
       flex-shrink: 0;
-      padding: 0 16px;
+      padding: 0 24px;
     }
 
     .header-block h1 {
@@ -66,10 +65,10 @@
 
     .viz-frame {
       width: 100%;
-      max-width: 799px;
-      height: 380px;
+      flex: 1;
       position: relative;
       margin-top: 8px;
+      min-height: 0;
     }
 
     .viz-frame svg {
@@ -144,7 +143,6 @@
 
     .footnote {
       width: 100%;
-      max-width: 799px;
       text-align: left;
       font-family: 'Rubik', sans-serif;
       font-size: 13px;
@@ -153,7 +151,7 @@
       margin-top: 6px;
       margin-bottom: 10px;
       flex-shrink: 0;
-      padding: 0 16px;
+      padding: 0 24px;
     }
 
     @media (max-width: 600px) {
@@ -166,8 +164,8 @@
       .header-block .subtitle {
         font-size: 14px;
       }
-      .viz-frame {
-        height: 300px;
+      .header-block, .footnote {
+        padding: 0 16px;
       }
       .scroll-step .text-box {
         max-width: 280px;
